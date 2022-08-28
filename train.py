@@ -116,7 +116,13 @@ loaded_train = torch.utils.data.DataLoader(TrainDataset(transform=transform), ba
 loaded_test = torch.utils.data.DataLoader(TestDataset(transform=transform), batch_size = wandb.config["batch_size"], num_workers=0)
 
 net = VGG16()
-net = net.to(device)
+
+if torch.cuda.device_count() > 1:
+  print("Let's use", torch.cuda.device_count(), "GPUs!")
+  # dim = 0 [30, xxx] -> [10, ...], [10, ...], [10, ...] on 3 GPUs
+  net = nn.DataParallel(net)
+
+net.to(device)
 
 criterion = nn.CrossEntropyLoss()
 
