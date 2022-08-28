@@ -170,9 +170,10 @@ for epoch in range(wandb.config["epochs"]):  # loop over the dataset multiple ti
         valid_loss += loss.item() * data.size(0)
 
     print(f'Epoch {epoch+1} \t\t Training Loss: {running_loss / len(loaded_train)} \t\t Validation Loss: {valid_loss / len(loaded_test)}')
+    wandb.log({"validation_loss": valid_loss})
     if min_valid_loss > valid_loss:
         print(f'Validation Loss Decreased({min_valid_loss:.6f}--->{valid_loss:.6f}) \t Saving The Model')
-        wandb.log({"validation_loss": running_loss})
+        
         min_valid_loss = valid_loss
         # Saving State Dict
         torch.save(net.state_dict(), f'saved_model_{wandb.run.id}.pth')
