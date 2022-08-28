@@ -24,7 +24,7 @@ wandb.init(project="geoguessr-ai")
 wandb.config = {
   "learning_rate": 0.001,
   "epochs": 100,
-  "batch_size": 8
+  "batch_size": 5
 }
 
 print(wandb.run.id)
