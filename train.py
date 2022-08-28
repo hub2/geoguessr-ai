@@ -68,8 +68,6 @@ all_geohashes = []
 for i in all_geohashes_tmp:
     all_geohashes.append("".join(i))
 
-print(all_geohashes)
-print(len(all_geohashes))
 
 def coords_to_class(coords):
     encoded = pgh.encode(coords[0], coords[1], precision=3)
@@ -116,8 +114,6 @@ transform = transforms.Compose(
 
 loaded_train = torch.utils.data.DataLoader(TrainDataset(transform=transform), batch_size = wandb.config["batch_size"], num_workers=0)
 loaded_test = torch.utils.data.DataLoader(TestDataset(transform=transform), batch_size = wandb.config["batch_size"], num_workers=0)
-print(loaded_train)
-print(loaded_test)
 
 net = VGG16()
 net.to(device)
