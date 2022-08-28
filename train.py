@@ -116,7 +116,7 @@ loaded_train = torch.utils.data.DataLoader(TrainDataset(transform=transform), ba
 loaded_test = torch.utils.data.DataLoader(TestDataset(transform=transform), batch_size = wandb.config["batch_size"], num_workers=0)
 
 net = VGG16()
-net.to(device)
+net = net.to(device)
 
 criterion = nn.CrossEntropyLoss()
 
