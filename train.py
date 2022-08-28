@@ -24,12 +24,12 @@ wandb.init(project="geoguessr-ai")
 wandb.config = {
   "learning_rate": 0.001,
   "epochs": 100,
-  "batch_size": 1
+  "batch_size": 8
 }
 
 print(wandb.run.id)
 
-DATASET_PATH = "C:\\Users\\huber\\Programowanie\\geoguessr\\data"
+DATASET_PATH = "/workspace"
 
 
 ones = glob.glob(os.path.join(DATASET_PATH, "*.1.png"))
@@ -150,8 +150,8 @@ for epoch in range(wandb.config["epochs"]):  # loop over the dataset multiple ti
 
         # print statistics
         running_loss += loss.item()
-        if i % 800 == 799:    # print every 800 mini-batches
-            print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 2000:.6f}')
+        if i % 200 == 199:    # print every 800 mini-batches
+            print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 200:.6f}')
             wandb.log({"loss": running_loss, "epoch": epoch, "validation_loss": valid_loss})
             
             running_loss = 0.0
