@@ -1,7 +1,10 @@
 import torch
 import torchvision
 import torchvision.transforms as transforms
+import torch.nn.functional as F
 
+import pygeohash as pgh
+from itertools import product 
 import glob
 import os 
 import json
@@ -10,7 +13,7 @@ import math
 import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
 from helpers import to_cuda, device
-from net import MultiLabelNN
+from net import MultiLabelNN, VGG16
 
 from torch import nn
 from PIL import Image
@@ -23,6 +26,8 @@ wandb.config = {
   "epochs": 100,
   "batch_size": 1
 }
+
+print(wandb.run.id)
 
 DATASET_PATH = "C:\\Users\\huber\\Programowanie\\geoguessr\\data"
 
@@ -51,10 +56,26 @@ random.seed(1)
 random.shuffle(dataset)
 
 dataset_len = len(dataset)
-print(dataset[:10])
-print(dataset_len)
 train_dataset = dataset[:int(dataset_len*0.8)]
 test_dataset = dataset[int(dataset_len*0.8):]
+
+print ("Train dataset length: ", len(train_dataset))
+print ("Test dataset length: ", len(test_dataset))
+
+__base32 = '0123456789bcdefghjkmnpqrstuvwxyz'
+all_geohashes_tmp = product(__base32, repeat=3)
+all_geohashes = []
+for i in all_geohashes_tmp:
+    all_geohashes.append("".join(i))
+
+print(all_geohashes)
+print(len(all_geohashes))
+
+def coords_to_class(coords):
+    encoded = pgh.encode(coords[0], coords[1], precision=3)
+    tensor = torch.tensor(all_geohashes.index(encoded))
+    return tensor
+
 
 class Dataset(torch.utils.data.Dataset):
     dataset=train_dataset
@@ -62,7 +83,7 @@ class Dataset(torch.utils.data.Dataset):
         super().__init__()
         self.transform = transform
     def load(self, item):
-        return (self.transform(Image.open(item[0]).convert('RGB')), torch.tensor(item[1]).to(device))
+        return (self.transform(Image.open(item[0]).convert('RGB')), coords_to_class(item[1]).to(device))
 
     def __getitem__(self, key):
         if isinstance( key, slice ) :
@@ -98,19 +119,21 @@ loaded_test = torch.utils.data.DataLoader(TestDataset(transform=transform), batc
 print(loaded_train)
 print(loaded_test)
 
-net = MultiLabelNN()
+net = VGG16()
 net.to(device)
 
-criterion = nn.MSELoss()
+criterion = nn.CrossEntropyLoss()
 
 optimizer = optim.SGD(net.parameters(), lr=wandb.config["learning_rate"], momentum=0.9)
 #scheduler = StepLR(optimizer, step_size=5, gamma=0.1)
 
 min_valid_loss = math.inf
+valid_loss = 0.0
 #wandb.watch(net)
 for epoch in range(wandb.config["epochs"]):  # loop over the dataset multiple times
 
     running_loss = 0.0
+    
     for i, data in enumerate(loaded_train, 0):
         # get the inputs; data is a list of [inputs, labels]
         inputs, labels = data
@@ -129,26 +152,27 @@ for epoch in range(wandb.config["epochs"]):  # loop over the dataset multiple ti
         running_loss += loss.item()
         if i % 800 == 799:    # print every 800 mini-batches
             print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 2000:.6f}')
-            wandb.log({"loss": running_loss, "epoch": epoch})
+            wandb.log({"loss": running_loss, "epoch": epoch, "validation_loss": valid_loss})
             
             running_loss = 0.0
             
     #scheduler.step()
+    
     valid_loss = 0.0
-
     for data, labels in loaded_test:
         if torch.cuda.is_available():
             data, labels = data.cuda(), labels.cuda()
         
         target = net(data)
         loss = criterion(target,labels)
-        valid_loss = loss.item() * data.size(0)
+        valid_loss += loss.item() * data.size(0)
 
     print(f'Epoch {epoch+1} \t\t Training Loss: {running_loss / len(loaded_train)} \t\t Validation Loss: {valid_loss / len(loaded_test)}')
     if min_valid_loss > valid_loss:
         print(f'Validation Loss Decreased({min_valid_loss:.6f}--->{valid_loss:.6f}) \t Saving The Model')
+        wandb.log({"validation_loss": running_loss})
         min_valid_loss = valid_loss
         # Saving State Dict
-        torch.save(net.state_dict(), 'saved_model.pth')
+        torch.save(net.state_dict(), f'saved_model_{wandb.run.id}.pth')
 
 print('Finished Training')
