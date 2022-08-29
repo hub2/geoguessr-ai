@@ -134,8 +134,7 @@ class VGG16(nn.Module):
         side = vgg16_bn(y)
         out = out.reshape(out.size(0), -1)
         side = side.reshape(side.size(0), -1)
-        print(out.shape)
-        print(side.shape)
+       
         out = self.fc(out)
         out = torch.concat((out, side), 1)
         out = self.fc1(out)
