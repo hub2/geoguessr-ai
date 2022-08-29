@@ -93,7 +93,6 @@ class Dataset(torch.utils.data.Dataset):
             im = Image.open(os.path.join(DATASET_PATH, json_filename + "." + str(i) + ".png"))
             ims.append(im)
         out_im = reduce(get_concat_h, ims)
-        print(out_im.size)
         panorama = self.transform(out_im.convert('RGB'))
         i = 5
         im = Image.open(os.path.join(DATASET_PATH, json_filename + "." + str(i) + ".png"))
