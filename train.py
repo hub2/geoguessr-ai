@@ -97,7 +97,7 @@ class Dataset(torch.utils.data.Dataset):
         i = 5
         im = Image.open(os.path.join(DATASET_PATH, json_filename + "." + str(i) + ".png"))
         car = self.transform(im.convert('RGB').resize((224,224)))
-        return (torch.tensor((panorama, car)).to(device), coords_to_class(item[1]).to(device))
+        return ((panorama, car).to(device), coords_to_class(item[1]).to(device))
 
     def __getitem__(self, key):
         if isinstance( key, slice ) :
@@ -179,9 +179,9 @@ for epoch in range(wandb.config["epochs"]):  # loop over the dataset multiple ti
     valid_loss = 0.0
     for data, labels in loaded_test:
         if torch.cuda.is_available():
-            data, labels = data.cuda(), labels.cuda()
+            labels = labels.cuda()
         
-        target = net(data)
+        target = net(data[0], data[1])
         loss = criterion(target,labels)
         valid_loss += loss.item() * data.size(0)
 
