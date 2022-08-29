@@ -1,3 +1,4 @@
+from regex import W
 import torch
 import torchvision
 import torchvision.transforms as transforms
@@ -14,28 +15,30 @@ import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
 from helpers import to_cuda, device
 from net import MultiLabelNN, VGG16
-
+from functools import reduce
 from torch import nn
 from PIL import Image
 import wandb
 
-wandb.init(project="geoguessr-ai")
+# wandb.init(project="geoguessr-ai")
 
 wandb.config = {
   "learning_rate": 0.001,
   "epochs": 100,
-  "batch_size": 5
+  "batch_size": 1
 }
 
-print(wandb.run.id)
+# print(wandb.run.id)
 
-DATASET_PATH = "/workspace"
+DATASET_PATH = "E:\\Programowanie\\Python\\geoguessr\\data"
 
 
 ones = glob.glob(os.path.join(DATASET_PATH, "*.1.png"))
 twos = glob.glob(os.path.join(DATASET_PATH, "*.2.png"))
 thirds = glob.glob(os.path.join(DATASET_PATH, "*.3.png"))
 fourths = glob.glob(os.path.join(DATASET_PATH, "*.4.png"))
+
+fifth = glob.glob(os.path.join(DATASET_PATH, "*.5.png"))
 
 pngs = list(zip(ones, twos, thirds, fourths))
 # print(pngs)
@@ -49,8 +52,8 @@ for item in pngs:
         info = json.loads(f.read().replace("'", "\""))
         lat = info["lat"]/180
         lng = info["lng"]/180
-    for i in item:
-        dataset.append((i, (lat, lng)))
+        dataset.append((json_filename, (lat, lng)))
+        
 
 random.seed(1)
 random.shuffle(dataset)
@@ -74,6 +77,11 @@ def coords_to_class(coords):
     tensor = torch.tensor(all_geohashes.index(encoded))
     return tensor
 
+def get_concat_h(im1, im2):
+    dst = Image.new('RGB', (im1.width + im2.width, im1.height))
+    dst.paste(im1, (0, 0))
+    dst.paste(im2, (int(im1.width*0.8), 0))
+    return dst
 
 class Dataset(torch.utils.data.Dataset):
     dataset=train_dataset
@@ -81,7 +89,17 @@ class Dataset(torch.utils.data.Dataset):
         super().__init__()
         self.transform = transform
     def load(self, item):
-        return (self.transform(Image.open(item[0]).convert('RGB')), coords_to_class(item[1]).to(device))
+        ims = []
+        for i in range(1,5):
+            im = Image.open(os.path.join(DATASET_PATH, json_filename + "." + str(i) + ".png"))
+            ims.append(im)
+        out_im = reduce(get_concat_h, ims)
+        print(out_im.size)
+        panorama = self.transform(out_im.convert('RGB'))
+        i = 5
+        im = Image.open(os.path.join(DATASET_PATH, json_filename + "." + str(i) + ".png"))
+        car = self.transform(im.convert('RGB').resize((224,224)))
+        return ((panorama, car), coords_to_class(item[1]).to(device))
 
     def __getitem__(self, key):
         if isinstance( key, slice ) :
@@ -144,7 +162,7 @@ for epoch in range(wandb.config["epochs"]):  # loop over the dataset multiple ti
         optimizer.zero_grad()
 
         # forward + backward + optimize
-        outputs = net(inputs)
+        outputs = net(inputs[0], inputs[1])
 
         loss = criterion(outputs, labels)
         loss.backward()
@@ -154,7 +172,7 @@ for epoch in range(wandb.config["epochs"]):  # loop over the dataset multiple ti
         running_loss += loss.item()
         if i % 200 == 199:    # print every 800 mini-batches
             print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 200:.6f}')
-            wandb.log({"loss": running_loss, "epoch": epoch, "validation_loss": valid_loss})
+            #wandb.log({"loss": running_loss, "epoch": epoch, "validation_loss": valid_loss})
             
             running_loss = 0.0
             
@@ -170,7 +188,7 @@ for epoch in range(wandb.config["epochs"]):  # loop over the dataset multiple ti
         valid_loss += loss.item() * data.size(0)
 
     print(f'Epoch {epoch+1} \t\t Training Loss: {running_loss / len(loaded_train)} \t\t Validation Loss: {valid_loss / len(loaded_test)}')
-    wandb.log({"validation_loss": valid_loss})
+
     if min_valid_loss > valid_loss:
         print(f'Validation Loss Decreased({min_valid_loss:.6f}--->{valid_loss:.6f}) \t Saving The Model')
         
