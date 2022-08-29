@@ -29,8 +29,8 @@ wandb.config = {
 
 # print(wandb.run.id)
 
-DATASET_PATH = "E:\\Programowanie\\Python\\geoguessr\\data"
-
+#DATASET_PATH = "E:\\Programowanie\\Python\\geoguessr\\data"
+DATASET_PATH = "/workspace/data"
 
 ones = glob.glob(os.path.join(DATASET_PATH, "*.1.png"))
 twos = glob.glob(os.path.join(DATASET_PATH, "*.2.png"))
