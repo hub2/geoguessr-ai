@@ -19,7 +19,7 @@ from torch import nn
 from PIL import Image
 import wandb
 
-# wandb.init(project="geoguessr-ai")
+wandb.init(project="geoguessr-ai")
 
 wandb.config = {
   "learning_rate": 0.001,
@@ -27,7 +27,7 @@ wandb.config = {
   "batch_size": 1
 }
 
-# print(wandb.run.id)
+print(wandb.run.id)
 
 #DATASET_PATH = "E:\\Programowanie\\Python\\geoguessr\\data"
 DATASET_PATH = "/workspace/data"
@@ -171,7 +171,7 @@ for epoch in range(wandb.config["epochs"]):  # loop over the dataset multiple ti
         running_loss += loss.item()
         if i % 200 == 199:    # print every 800 mini-batches
             print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 200:.6f}')
-            #wandb.log({"loss": running_loss, "epoch": epoch, "validation_loss": valid_loss})
+            wandb.log({"loss": running_loss, "epoch": epoch, "validation_loss": valid_loss})
             
             running_loss = 0.0
             
