@@ -57,8 +57,8 @@ for item in pngs:
     json_filename = json_basename.split(".")[0]
     with open(os.path.join(DATASET_PATH, json_filename + ".json"), "r") as f:
         info = json.loads(f.read().replace("'", "\""))
-        lat = info["lat"]
-        lng = info["lng"]
+        lat = info["lat"]/180
+        lng = info["lng"]/180
         #point = countries.Point(lat, lng)
         #country = cc.getCountry(point)
         dataset.append((json_filename, (lat, lng)))
@@ -107,7 +107,7 @@ class Dataset(torch.utils.data.Dataset):
         i = 5
         im = Image.open(os.path.join(DATASET_PATH, json_filename + "." + str(i) + ".png"))
         car = self.transform(im.convert('RGB').resize((224,224)))
-        return ((panorama, car), torch.tensor(item[1])/180)
+        return ((panorama, car), torch.tensor(item[1]).to(device))
 
     def __getitem__(self, key):
         if isinstance( key, slice ) :
