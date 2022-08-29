@@ -18,7 +18,14 @@ from functools import reduce
 from torch import nn
 from PIL import Image
 import wandb
+import countries
+cc = countries.CountryChecker('./TM_WORLD_BORDERS/TM_WORLD_BORDERS-0.3.shp')
 
+
+for i in range(-120, 120):
+    for j in range(-120, 120):
+        cc.getCountry(countries.Point(i, j)).iso
+exit()
 #wandb.init(project="geoguessr-ai")
 
 wandb.config = {
@@ -184,7 +191,7 @@ for epoch in range(wandb.config["epochs"]):  # loop over the dataset multiple ti
         
         target = net(data[0], data[1])
         loss = criterion(target,labels)
-        valid_loss += loss.item() * data.size(0)
+        valid_loss += loss.item() * data[0].size(0)
 
     print(f'Epoch {epoch+1} \t\t Training Loss: {running_loss / len(loaded_train)} \t\t Validation Loss: {valid_loss / len(loaded_test)}')
 
