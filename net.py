@@ -1,5 +1,8 @@
 import torch.nn.functional as F
+from torchvision import models
 from torch import nn
+import torch
+from helpers import device
 
 class MultiLabelNN(nn.Module):
     def __init__(self):
@@ -27,6 +30,21 @@ class MultiLabelNN(nn.Module):
        x = F.relu(x)
        x = self.fc3(x)
        return x  
+
+vgg16_bn = models.vgg16_bn(models.VGG16_BN_Weights.DEFAULT)
+
+# Freeze training for all layers
+for param in vgg16_bn.features.parameters():
+    param.require_grad = False
+
+# Newly created modules have require_grad=True by default
+num_features = vgg16_bn.classifier[6].in_features
+features = list(vgg16_bn.classifier.children())[:-5] # Remove last layer
+# features.extend([nn.Linear(num_features, len(32768))]) # Add our layer with 4 outputs
+print(features)
+vgg16_bn.classifier = nn.Sequential(*features) # Replace the model classifier
+vgg16_bn.to(device)
+
 
 class VGG16(nn.Module):
     def __init__(self, num_classes=32768):
@@ -90,16 +108,16 @@ class VGG16(nn.Module):
             nn.MaxPool2d(kernel_size = 2, stride = 2))
         self.fc = nn.Sequential(
             nn.Dropout(0.5),
-            nn.Linear(50176, 4096),
+            nn.Linear(204288, 4096),
             nn.ReLU())
         self.fc1 = nn.Sequential(
             nn.Dropout(0.5),
-            nn.Linear(4096, 4096),
+            nn.Linear(8192, 4096),
             nn.ReLU())
         self.fc2= nn.Sequential(
             nn.Linear(4096, num_classes))
         
-    def forward(self, x):
+    def forward(self, x, y):
         out = self.layer1(x)
         out = self.layer2(out)
         out = self.layer3(out)
@@ -113,8 +131,13 @@ class VGG16(nn.Module):
         out = self.layer11(out)
         out = self.layer12(out)
         out = self.layer13(out)
+        side = vgg16_bn(y)
         out = out.reshape(out.size(0), -1)
+        side = side.reshape(side.size(0), -1)
+        print(out.shape)
+        print(side.shape)
         out = self.fc(out)
+        out = torch.concat((out, side), 1)
         out = self.fc1(out)
         out = self.fc2(out)
         return out
