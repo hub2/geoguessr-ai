@@ -10,6 +10,7 @@ import os
 import json
 import random
 import math
+import iso3166
 import torch.optim as optim
 from torch.optim.lr_scheduler import StepLR
 from helpers import to_cuda, device
@@ -19,14 +20,10 @@ from torch import nn
 from PIL import Image
 import wandb
 import countries
-cc = countries.CountryChecker('./TM_WORLD_BORDERS/TM_WORLD_BORDERS-0.3.shp')
-
-
-for i in range(-120, 120):
-    for j in range(-120, 120):
-        cc.getCountry(countries.Point(i, j)).iso
-exit()
-#wandb.init(project="geoguessr-ai")
+#cc = countries.CountryChecker('./TM_WORLD_BORDERS/TM_WORLD_BORDERS-0.3.shp')
+#all_countries = iso3166.countries_by_alpha2.keys()
+#blacklist = ["AF", ""]
+wandb.init(project="geoguessr-ai")
 
 wandb.config = {
   "learning_rate": 0.001,
@@ -34,10 +31,10 @@ wandb.config = {
   "batch_size": 1
 }
 
-# print(wandb.run.id)
+print(wandb.run.id)
 
-DATASET_PATH = "E:\\Programowanie\\Python\\geoguessr\\data"
-#DATASET_PATH = "/workspace/data"
+#DATASET_PATH = "E:\\Programowanie\\Python\\geoguessr\\data"
+DATASET_PATH = "/workspace/data"
 
 ones = glob.glob(os.path.join(DATASET_PATH, "*.1.png"))
 twos = glob.glob(os.path.join(DATASET_PATH, "*.2.png"))
@@ -58,7 +55,8 @@ for item in pngs:
         info = json.loads(f.read().replace("'", "\""))
         lat = info["lat"]/180
         lng = info["lng"]/180
-        dataset.append((json_filename, (lat, lng)))
+        #country = cc.getCountry(countries.Point(lat, lng)).iso
+        dataset.append((json_filename, (lat,lng)))
         
 
 random.seed(1)
@@ -71,11 +69,11 @@ test_dataset = dataset[int(dataset_len*0.8):]
 print ("Train dataset length: ", len(train_dataset))
 print ("Test dataset length: ", len(test_dataset))
 
-__base32 = '0123456789bcdefghjkmnpqrstuvwxyz'
-all_geohashes_tmp = product(__base32, repeat=3)
-all_geohashes = []
-for i in all_geohashes_tmp:
-    all_geohashes.append("".join(i))
+#__base32 = '0123456789bcdefghjkmnpqrstuvwxyz'
+#all_geohashes_tmp = product(__base32, repeat=3)
+#all_geohashes = []
+#for i in all_geohashes_tmp:
+#    all_geohashes.append("".join(i))
 
 
 def coords_to_class(coords):
@@ -100,12 +98,11 @@ class Dataset(torch.utils.data.Dataset):
             im = Image.open(os.path.join(DATASET_PATH, json_filename + "." + str(i) + ".png"))
             ims.append(im)
         out_im = reduce(get_concat_h, ims)
-        out_im.show()
         panorama = self.transform(out_im.convert('RGB'))
         i = 5
         im = Image.open(os.path.join(DATASET_PATH, json_filename + "." + str(i) + ".png"))
         car = self.transform(im.convert('RGB').resize((224,224)))
-        return ((panorama, car), coords_to_class(item[1]).to(device))
+        return ((panorama, car), torch.tensor(item[1])/120)
 
     def __getitem__(self, key):
         if isinstance( key, slice ) :
@@ -139,7 +136,7 @@ transform = transforms.Compose(
 loaded_train = torch.utils.data.DataLoader(TrainDataset(transform=transform), batch_size = wandb.config["batch_size"], num_workers=0)
 loaded_test = torch.utils.data.DataLoader(TestDataset(transform=transform), batch_size = wandb.config["batch_size"], num_workers=0)
 
-net = VGG16()
+net = VGG16(2)
 
 if torch.cuda.device_count() > 1:
   print("Let's use", torch.cuda.device_count(), "GPUs!")
@@ -148,7 +145,7 @@ if torch.cuda.device_count() > 1:
 
 net.to(device)
 
-criterion = nn.CrossEntropyLoss()
+criterion = nn.MSELoss()
 
 optimizer = optim.SGD(net.parameters(), lr=wandb.config["learning_rate"], momentum=0.9)
 #scheduler = StepLR(optimizer, step_size=5, gamma=0.1)
