@@ -98,7 +98,7 @@ class Dataset(torch.utils.data.Dataset):
         i = 5
         im = Image.open(os.path.join(DATASET_PATH, json_filename + "." + str(i) + ".png"))
         car = self.transform(im.convert('RGB').resize((224,224)))
-        return ((panorama, car), coords_to_class(item[1]).to(device))
+        return (torch.tensor((panorama, car)).to(device), coords_to_class(item[1]).to(device))
 
     def __getitem__(self, key):
         if isinstance( key, slice ) :
