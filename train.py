@@ -21,6 +21,8 @@ from PIL import Image
 import wandb
 import countries
 
+wandb.init(project="geoguessr-ai")
+print(wandb.run.id)
 wandb.config = {
   "learning_rate": 0.001,
   "epochs": 100,
@@ -28,15 +30,12 @@ wandb.config = {
 }
 
 
-cc = countries.CountryChecker('./TM_WORLD_BORDERS/TM_WORLD_BORDERS-0.3.shp')
-all_countries = iso3166.countries_by_alpha2.keys()
-blacklist = ["AF", "DZ", "AO", "AI", "AG", "AM", "AW", "AZ", "BH", "BZ", "BJ", "BY", "BQ", "BA", "BN", "BF", "BI", "TD", "UM", "CD", "DM", "DJ", "EG", "ER", "ET", "FK", "FJ", "GA", "GM", "GS", "GD", "GE", "GY", "GP", "GW", "GQ", "GN", "HT", "HN", "IQ", "IR", "JM", "YE", "KY", "CM", "QA", "KZ", "KI", "KM", "KP", "CU", "KW", "LR", "LY", "LI", "YT", "MW", "MV", "ML", "MA", "MQ", "MR", "MU", "FM", "MM", "MD", "MS", "MZ", "NA", "NR", "NP", "NE", "NI", "NU", "NF", "NC", "OM", "PW", "PA", "PG", "PY", "PN", "PF", "CF", "RW", "EH", "KN", "LC", "VC", "BL", "MF", "PM", "SV", "SC", "SL", "SX", "SO", "SD", "SS", "SR", "SY", "TJ", "TZ", "TL", "TG", "TK", "TO", "TT", "TM", "TC", "TV", "UZ", "VU", "WF", "VE", "CI", "BV", "SH", "HM", "ST", "ZM", "ZW"]
+#cc = countries.CountryChecker('./TM_WORLD_BORDERS/TM_WORLD_BORDERS-0.3.shp')
+#all_countries = iso3166.countries_by_alpha2.keys()
+#blacklist = ["AF", "DZ", "AO", "AI", "AG", "AM", "AW", "AZ", "BH", "BZ", "BJ", "BY", "BQ", "BA", "BN", "BF", "BI", "TD", "UM", "CD", "DM", "DJ", "EG", "ER", "ET", "FK", "FJ", "GA", "GM", "GS", "GD", "GE", "GY", "GP", "GW", "GQ", "GN", "HT", "HN", "IQ", "IR", "JM", "YE", "KY", "CM", "QA", "KZ", "KI", "KM", "KP", "CU", "KW", "LR", "LY", "LI", "YT", "MW", "MV", "ML", "MA", "MQ", "MR", "MU", "FM", "MM", "MD", "MS", "MZ", "NA", "NR", "NP", "NE", "NI", "NU", "NF", "NC", "OM", "PW", "PA", "PG", "PY", "PN", "PF", "CF", "RW", "EH", "KN", "LC", "VC", "BL", "MF", "PM", "SV", "SC", "SL", "SX", "SO", "SD", "SS", "SR", "SY", "TJ", "TZ", "TL", "TG", "TK", "TO", "TT", "TM", "TC", "TV", "UZ", "VU", "WF", "VE", "CI", "BV", "SH", "HM", "ST", "ZM", "ZW"]
 
-blacklist_len = len(blacklist)
-all_countries = [country for country in all_countries if country not in blacklist]
-print(len(all_countries))
-print(all_countries)
-exit()
+#blacklist_len = len(blacklist)
+#all_countries = [country for country in all_countries if country not in blacklist]
 
 #DATASET_PATH = "E:\\Programowanie\\Python\\geoguessr\\data"
 DATASET_PATH = "/workspace/data"
@@ -58,10 +57,11 @@ for item in pngs:
     json_filename = json_basename.split(".")[0]
     with open(os.path.join(DATASET_PATH, json_filename + ".json"), "r") as f:
         info = json.loads(f.read().replace("'", "\""))
-        lat = info["lat"]/180
-        lng = info["lng"]/180
-        #country = cc.getCountry(countries.Point(lat, lng)).iso
-        dataset.append((json_filename, (lat,lng)))
+        lat = info["lat"]
+        lng = info["lng"]
+        #point = countries.Point(lat, lng)
+        #country = cc.getCountry(point)
+        dataset.append((json_filename, (lat, lng)))
         
 
 random.seed(1)
@@ -159,8 +159,6 @@ min_valid_loss = math.inf
 valid_loss = 0.0
 #wandb.watch(net)
 
-wandb.init(project="geoguessr-ai")
-print(wandb.run.id)
 
 for epoch in range(wandb.config["epochs"]):  # loop over the dataset multiple times
 
