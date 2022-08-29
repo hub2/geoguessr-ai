@@ -19,7 +19,7 @@ from torch import nn
 from PIL import Image
 import wandb
 
-wandb.init(project="geoguessr-ai")
+#wandb.init(project="geoguessr-ai")
 
 wandb.config = {
   "learning_rate": 0.001,
@@ -27,10 +27,10 @@ wandb.config = {
   "batch_size": 1
 }
 
-print(wandb.run.id)
+# print(wandb.run.id)
 
-#DATASET_PATH = "E:\\Programowanie\\Python\\geoguessr\\data"
-DATASET_PATH = "/workspace/data"
+DATASET_PATH = "E:\\Programowanie\\Python\\geoguessr\\data"
+#DATASET_PATH = "/workspace/data"
 
 ones = glob.glob(os.path.join(DATASET_PATH, "*.1.png"))
 twos = glob.glob(os.path.join(DATASET_PATH, "*.2.png"))
@@ -77,9 +77,9 @@ def coords_to_class(coords):
     return tensor
 
 def get_concat_h(im1, im2):
-    dst = Image.new('RGB', (im1.width + im2.width, im1.height))
+    dst = Image.new('RGB', (int(im1.width-92) + im2.width, im1.height))
     dst.paste(im1, (0, 0))
-    dst.paste(im2, (int(im1.width*0.8), 0))
+    dst.paste(im2, (int(im1.width-92), 0))
     return dst
 
 class Dataset(torch.utils.data.Dataset):
@@ -93,6 +93,7 @@ class Dataset(torch.utils.data.Dataset):
             im = Image.open(os.path.join(DATASET_PATH, json_filename + "." + str(i) + ".png"))
             ims.append(im)
         out_im = reduce(get_concat_h, ims)
+        out_im.show()
         panorama = self.transform(out_im.convert('RGB'))
         i = 5
         im = Image.open(os.path.join(DATASET_PATH, json_filename + "." + str(i) + ".png"))
