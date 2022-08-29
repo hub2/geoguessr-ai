@@ -20,10 +20,6 @@ from torch import nn
 from PIL import Image
 import wandb
 import countries
-#cc = countries.CountryChecker('./TM_WORLD_BORDERS/TM_WORLD_BORDERS-0.3.shp')
-#all_countries = iso3166.countries_by_alpha2.keys()
-#blacklist = ["AF", ""]
-wandb.init(project="geoguessr-ai")
 
 wandb.config = {
   "learning_rate": 0.001,
@@ -31,7 +27,16 @@ wandb.config = {
   "batch_size": 1
 }
 
-print(wandb.run.id)
+
+cc = countries.CountryChecker('./TM_WORLD_BORDERS/TM_WORLD_BORDERS-0.3.shp')
+all_countries = iso3166.countries_by_alpha2.keys()
+blacklist = ["AF", "DZ", "AO", "AI", "AG", "AM", "AW", "AZ", "BH", "BZ", "BJ", "BY", "BQ", "BA", "BN", "BF", "BI", "TD", "UM", "CD", "DM", "DJ", "EG", "ER", "ET", "FK", "FJ", "GA", "GM", "GS", "GD", "GE", "GY", "GP", "GW", "GQ", "GN", "HT", "HN", "IQ", "IR", "JM", "YE", "KY", "CM", "QA", "KZ", "KI", "KM", "KP", "CU", "KW", "LR", "LY", "LI", "YT", "MW", "MV", "ML", "MA", "MQ", "MR", "MU", "FM", "MM", "MD", "MS", "MZ", "NA", "NR", "NP", "NE", "NI", "NU", "NF", "NC", "OM", "PW", "PA", "PG", "PY", "PN", "PF", "CF", "RW", "EH", "KN", "LC", "VC", "BL", "MF", "PM", "SV", "SC", "SL", "SX", "SO", "SD", "SS", "SR", "SY", "TJ", "TZ", "TL", "TG", "TK", "TO", "TT", "TM", "TC", "TV", "UZ", "VU", "WF", "VE", "CI", "BV", "SH", "HM", "ST", "ZM", "ZW"]
+
+blacklist_len = len(blacklist)
+all_countries = [country for country in all_countries if country not in blacklist]
+print(len(all_countries))
+print(all_countries)
+exit()
 
 #DATASET_PATH = "E:\\Programowanie\\Python\\geoguessr\\data"
 DATASET_PATH = "/workspace/data"
@@ -102,7 +107,7 @@ class Dataset(torch.utils.data.Dataset):
         i = 5
         im = Image.open(os.path.join(DATASET_PATH, json_filename + "." + str(i) + ".png"))
         car = self.transform(im.convert('RGB').resize((224,224)))
-        return ((panorama, car), torch.tensor(item[1])/120)
+        return ((panorama, car), torch.tensor(item[1])/180)
 
     def __getitem__(self, key):
         if isinstance( key, slice ) :
@@ -153,6 +158,10 @@ optimizer = optim.SGD(net.parameters(), lr=wandb.config["learning_rate"], moment
 min_valid_loss = math.inf
 valid_loss = 0.0
 #wandb.watch(net)
+
+wandb.init(project="geoguessr-ai")
+print(wandb.run.id)
+
 for epoch in range(wandb.config["epochs"]):  # loop over the dataset multiple times
 
     running_loss = 0.0
