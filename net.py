@@ -43,6 +43,11 @@ features = list(vgg16_bn.classifier.children())[:-5] # Remove last layer
 # features.extend([nn.Linear(num_features, len(32768))]) # Add our layer with 4 outputs
 print(features)
 vgg16_bn.classifier = nn.Sequential(*features) # Replace the model classifier
+
+#if torch.cuda.device_count() > 1:
+#    print("Let's use", torch.cuda.device_count(), "GPUs!")
+#    # dim = 0 [30, xxx] -> [10, ...], [10, ...], [10, ...] on 3 GPUs
+#    vgg16_bn = nn.DataParallel(vgg16_bn)
 vgg16_bn.to(device)
 
 
