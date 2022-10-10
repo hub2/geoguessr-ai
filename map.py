@@ -82,7 +82,6 @@ for pol in polygons:
 gdf = gpd.GeoSeries(out)
 #gdf.plot(ax=world.plot(figsize=(20, 12)), marker='o', color='red', markersize=1)
 #plt.show()
-print(gdf)
 
 df = pd.DataFrame(dataset, columns=["Longitude", "Latitude"])
 geometry = [Point(xy) for xy in zip(df['Longitude'], df['Latitude'])]
@@ -97,5 +96,6 @@ for geom in geometry:
 
 gdf = gpd.GeoSeries(polys_with_stuff)
 print(gdf)
-gdf.plot(ax=world.plot(figsize=(20, 12)), marker='o', color='red', markersize=1)
-plt.show()
+
+classes = list(enumerate(gdf.values.tolist()))
+

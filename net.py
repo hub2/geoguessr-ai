@@ -12,7 +12,7 @@ class MultiLabelNN(nn.Module):
         self.conv2 = nn.Conv2d(20, 20, 5)
         self.fc1 = nn.Linear(492800, 768)
         self.fc2 = nn.Linear(768, 320)
-        self.fc3 = nn.Linear(320, 32768)
+        self.fc3 = nn.Linear(320, 333)
 
     def forward(self, x):
        #shape of x is (b_s, 32,32,1)
@@ -52,7 +52,7 @@ vgg16_bn.to(device)
 
 
 class VGG16(nn.Module):
-    def __init__(self, num_classes=32768):
+    def __init__(self, num_classes=333):
         super(VGG16, self).__init__()
         self.layer1 = nn.Sequential(
             nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1),
