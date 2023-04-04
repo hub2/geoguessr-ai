@@ -189,7 +189,6 @@ def stich_tiles(panoid, tiles, directory, final_directory):
 
     panorama.save(final_directory + ("/%s.jpg" % panoid))
     del panorama
-    
 
 
 def download_panorama_v3(panoid, zoom=5, disp=False):

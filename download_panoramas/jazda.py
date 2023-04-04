@@ -8,7 +8,7 @@ import fiona
 
 def generate_coordinate(land_areas):
     while True:
-        lat = random.uniform(-90, 90)
+        lat = random.uniform(-70, 78)
         lon = random.uniform(-180, 180)
 
         point = Point(lon, lat)
@@ -32,14 +32,17 @@ with fiona.open("../TM_WORLD_BORDERS/TM_WORLD_BORDERS-0.3.shp", "r") as shapefil
 
 while True:
     lat, lon = generate_coordinate(land_areas)
-    name = str(lat) + "_" + str(lon) + ".jpg"
-    print(".", end="")
+    #print(".", end="")
     sys.stdout.flush()
     panoids = streetview.panoids(lat=lat, lon=lon)
     if len(panoids) == 0:
         continue
 
     panoid = panoids[0]['panoid']
+    lat = panoids[0]['lat']
+    lon = panoids[0]['lon']
+    name = str(lat) + "_" + str(lon) + ".jpg"
+
     panorama = streetview.download_panorama_v3(panoid, zoom=2, disp=False)
     print("\nsaving... " + name)
     panorama.save(os.path.join("downloads", name))
