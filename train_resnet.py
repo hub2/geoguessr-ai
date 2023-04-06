@@ -147,7 +147,7 @@ def main():
     wandb.init(project='geoguessr-ai', entity='desik')
 
     config = wandb.config
-    config.learning_rate = 0.1
+    config.learning_rate = 0.01
     config.batch_size = 16
     config.epochs = 1000
 
