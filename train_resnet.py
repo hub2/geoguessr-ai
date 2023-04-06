@@ -178,6 +178,12 @@ def main():
     model.fc = nn.Linear(model.fc.in_features, num_classes)
     #summary(model, (3, 1664, 832))
 
+    if torch.cuda.device_count() > 1:
+        print("Let's use", torch.cuda.device_count(), "GPUs!")
+        # dim = 0 [30, xxx] -> [10, ...], [10, ...], [10, ...] on 3 GPUs
+        model = nn.DataParallel(model)
+
+
     model = model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
