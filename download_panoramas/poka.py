@@ -3,6 +3,8 @@ import re
 import geopandas as gpd
 from shapely.geometry import Point
 import matplotlib.pyplot as plt
+import cartopy.crs as ccrs
+
 
 # Set the path to the "downloads" folder
 path = "./downloads"
@@ -24,6 +26,14 @@ for filename in os.listdir(path):
             lat = float(match.group(2))
             coords.append((lat, lon))
 
+
+with open("out.csv", "w") as f:
+    f.write("latitude,longitude\n")
+    for coord in coords:
+        f.write(str(coord[1]) + "," + str(coord[0]) + "\n")
+
+
+
 # Create a list of Shapely Point objects from the coordinates
 points = [Point(coord) for coord in coords]
 
@@ -34,9 +44,13 @@ gdf = gpd.GeoDataFrame(geometry=points, crs=crs)
 # Load a shapefile of the world map
 world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
 
+fig = plt.figure()
+ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
+ax.stock_img()
+
 # Plot the world map and the points on the same axis
-fig, ax = plt.subplots()
+#fig, ax = plt.subplots()
 world.plot(ax=ax, color='white', edgecolor='black')
-gdf.plot(ax=ax, marker='o', color='red', markersize=10)
+gdf.plot(ax=ax, marker='.', color='purple', markersize=1)
 plt.show()
 
