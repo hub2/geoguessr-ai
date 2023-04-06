@@ -5,3 +5,13 @@ pygeohash
 geopandas
 wandb
 matplotlib
+numpy
+torchsummary
+scikit-learn
+PIL
+haversine
+pywraps2
+s2cell
+geopandas
+cartopy
+shapely
