@@ -8,7 +8,7 @@ matplotlib
 numpy
 torchsummary
 scikit-learn
-PIL
+Pillow
 haversine
 pywraps2
 s2cell
