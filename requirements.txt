@@ -10,7 +10,6 @@ torchsummary
 scikit-learn
 Pillow
 haversine
-pywraps2
 s2cell
 geopandas
 cartopy
