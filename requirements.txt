@@ -12,5 +12,5 @@ Pillow
 haversine
 s2cell
 geopandas
-cartopy
+#cartopy
 shapely
