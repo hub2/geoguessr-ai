@@ -30,7 +30,7 @@ class ImageDataset(Dataset):
         self.images, self.targets = self.load_data()
 
     def load_data(self):
-        image_files = glob.glob("./download_panoramas/downloads/*.jpg")[:100]
+        image_files = glob.glob("./download_panoramas/downloads/*.jpg")
         coords = [tuple(map(float, re.findall(r"[-+]?\d+\.\d+", img_path))) for img_path in image_files]
 
         # Convert class coordinates to radians and create a BallTree
