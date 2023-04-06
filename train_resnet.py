@@ -2,6 +2,7 @@ import os
 import re
 import math
 import random
+import statistics
 import wandb
 import glob
 import torch
@@ -77,7 +78,7 @@ def calculate_geoguessr(outputs, targets, classes_):
     haversine_loss = torch.tensor([haversine(target_coords[i][::-1], pred_coords[i][::-1]) for i in range(targets.size(0))], dtype=torch.float32)
     return [int(5000*(math.e**(-x/2000))) for x in haversine_loss.tolist()]
 
-def custom_loss(outputs, targets, classes_, alpha=0.001):
+def custom_loss(outputs, targets, classes_, alpha=0.003):
     class_loss = nn.CrossEntropyLoss()(outputs, targets)
 
     _, pred_indices = torch.max(outputs, 1)
@@ -90,8 +91,9 @@ def custom_loss(outputs, targets, classes_, alpha=0.001):
 
     haversine_part = alpha * haversine_loss
     cross_entropy_part = (1 - alpha) * class_loss
-    print(f"Haversine loss part: {haversine_part}")
-    print(f"CrossEntropy loss part: {cross_entropy_part}")
+
+    wandb.log({"haversine_loss": haversine_part})
+    wandb.log({"cross_entropy_loss": cross_entropy_part})
 
     loss = haversine_part + cross_entropy_part
     return loss
@@ -117,7 +119,8 @@ def train(model, dataloader, optimizer, classes_, scaler, device):
         scaler.step(optimizer)
         scaler.update()
         if idx % 1000 == 0:
-            print(f"Geoguessr scores on train batch: {calculate_geoguessr(outputs, targets, classes_)}")
+            geoguessr_loss_train_mean = statistics.mean(calculate_geoguessr(outputs, targets, classes_))
+            wandb.log({"geoguessr_score_train_random_batch_mean": geoguessr_loss_train_mean})
 
         total_loss += loss.item()
 
@@ -127,6 +130,7 @@ def validate(model, dataloader, classes_, device):
     model.eval()
     total_loss = 0
     num_samples = 0
+    geoguessr_loss = 0.0
 
     with torch.no_grad():
         for images, targets in dataloader:
@@ -135,11 +139,13 @@ def validate(model, dataloader, classes_, device):
 
             outputs = model(images)
             loss = custom_loss(outputs, targets, classes_)
+            geoguessr_loss += sum(calculate_geoguessr(outputs, targets, classes_))
 
-            print(f"Geoguessr scores on validate batch: {calculate_geoguessr(outputs, targets, classes_)}")
             total_loss += loss.item() * targets.size(0)
             num_samples += targets.size(0)
 
+    geoguessr_score_mean = geoguessr_loss/num_samples
+    wandb.log({"geoguessr_score_val_mean": geoguessr_score_mean})
     model.train()
     return total_loss / num_samples
 
@@ -177,7 +183,6 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
     scaler = torch.cuda.amp.GradScaler()
-
 
     min_val_loss = math.inf
 
