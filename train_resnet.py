@@ -29,6 +29,11 @@ class ImageDataset(Dataset):
         self.val_split = val_split
         self.seed = seed
         self.images, self.targets = self.load_data()
+        self.transform = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])
+        ])
 
     def load_data(self):
         image_files = glob.glob("./download_panoramas/downloads/*.jpg")
@@ -67,7 +72,7 @@ class ImageDataset(Dataset):
     def __getitem__(self, index):
         image_path = self.images[index]
         image = Image.open(image_path)
-        image = transforms.ToTensor()(image.convert('RGB'))
+        image = self.transform(image.convert('RGB'))
         target = self.targets[index]
         return image, target
 
