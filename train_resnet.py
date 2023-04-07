@@ -23,6 +23,24 @@ from haversine import haversine
 
 classes = get_classes()
 
+class RandomPanoramaShift:
+    def __init__(self):
+        super().__init__()
+
+    def __call__(self, tensor):
+        # Calculate the width and height of the crop area
+        random_crop_percentage = random.uniform(0, 0.99)
+        crop_width = int(tensor.shape[1] * random_crop_percentage)
+        crop_height = tensor.shape[0]
+
+        # Crop the left side with a random width percentage and 100% height
+        cropped = tensor[:, :crop_width, :]
+
+        # Cut out the cropped part and paste it into the right side of the image
+        result_tensor = torch.cat((tensor[:, crop_width:, :], cropped), dim=1)
+        return result_tensor
+
+
 class ImageDataset(Dataset):
     def __init__(self, split="train", val_split=0.15, seed=42):
         self.split = split
@@ -31,8 +49,8 @@ class ImageDataset(Dataset):
         self.images, self.targets = self.load_data()
         self.transform = transforms.Compose([
             transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            RandomPanoramaShift()
         ])
 
     def load_data(self):
@@ -161,7 +179,7 @@ def main():
 
     config = wandb.config
     config.learning_rate = 0.01
-    config.batch_size = 64
+    config.batch_size = 16
     config.epochs = 1000
 
     train_dataset = ImageDataset(split="train")
@@ -194,7 +212,8 @@ def main():
     model = model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+    #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, factor=0.5)
     scaler = torch.cuda.amp.GradScaler()
 
     if len(sys.argv) > 1:
