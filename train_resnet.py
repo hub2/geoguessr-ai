@@ -160,8 +160,8 @@ def main():
     train_dataset = ImageDataset(split="train")
     val_dataset = ImageDataset(split="val")
 
-    train_dataloader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True)
-    val_dataloader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=True)
+    train_dataloader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True, pin_memory=True, max_workers=4)
+    val_dataloader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=True, pin_memory=True, max_workers=4)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     num_classes = len(classes)
