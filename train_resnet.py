@@ -30,14 +30,16 @@ class RandomPanoramaShift:
     def __call__(self, tensor):
         # Calculate the width and height of the crop area
         random_crop_percentage = random.uniform(0, 0.99)
-        crop_width = int(tensor.shape[1] * random_crop_percentage)
-        crop_height = tensor.shape[0]
+        crop_width = int(tensor.shape[2] * random_crop_percentage)
+        crop_height = tensor.shape[1]
 
         # Crop the left side with a random width percentage and 100% height
-        cropped = tensor[:, :crop_width, :]
+        cropped = tensor[:, :crop_height, :crop_width]
 
         # Cut out the cropped part and paste it into the right side of the image
-        result_tensor = torch.cat((tensor[:, crop_width:, :], cropped), dim=1)
+        uncropped = tensor[:, :crop_height, crop_width:]
+        result_tensor = torch.cat((uncropped, cropped), dim=2)
+
         return result_tensor
 
 
@@ -235,10 +237,15 @@ def main():
 
         print(f"Epoch {epoch + 1}/{config.epochs}, Train Loss: {train_loss:.4f}, Validation Loss: {val_loss:.4f}")
 
-        scheduler.step()
+        scheduler.step(val_loss)
         if val_loss < min_val_loss:
             min_val_loss = val_loss
-            torch.save(model.state_dict(), f"{date.today()}-geoguessr-{epoch}.pth")
+            torch.save({'epoch': epoch,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict(),
+                'train_loss': train_loss, 'val_loss':val_loss}, f"{date.today()}-geoguessr-{epoch}.pth")
+
             wandb.save(f"{date.today()}-geoguessr-{epoch}.pth")
 
 
