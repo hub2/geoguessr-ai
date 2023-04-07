@@ -113,7 +113,7 @@ def main():
 
     points = get_classes()
     with open('points.pickle', 'wb') as handle:
-        pickle.dump(points, handle, protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(points, handle, protocol=4)
 
     points = [Point(i[1][0], i[1][1]) for i in points]
     gdf = gpd.GeoDataFrame(geometry=points)
