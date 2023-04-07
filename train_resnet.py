@@ -1,4 +1,5 @@
 import os
+import sys
 import re
 import math
 import random
@@ -55,6 +56,7 @@ class ImageDataset(Dataset):
         else:  # validation
             combined = combined[:split_index]
         image_files, targets = zip(*combined)
+
         print(f"{self.split} Data loaded")
 
         return image_files, targets
@@ -64,8 +66,8 @@ class ImageDataset(Dataset):
 
     def __getitem__(self, index):
         image_path = self.images[index]
-        image = Image.open(image_path).convert('RGB')
-        image = transforms.ToTensor()(image)
+        image = Image.open(image_path)
+        image = transforms.ToTensor()(image.convert('RGB'))
         target = self.targets[index]
         return image, target
 
@@ -154,7 +156,7 @@ def main():
 
     config = wandb.config
     config.learning_rate = 0.01
-    config.batch_size = 16
+    config.batch_size = 64
     config.epochs = 1000
 
     train_dataset = ImageDataset(split="train")
@@ -189,6 +191,14 @@ def main():
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
     scaler = torch.cuda.amp.GradScaler()
+
+    if len(sys.argv) > 1:
+        filename = sys.argv[1]
+        model.load_state_dict(torch.load(filename))
+        #optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        #scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+        for i in range(7):
+            scheduler.step()
 
     min_val_loss = math.inf
 
