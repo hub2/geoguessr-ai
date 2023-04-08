@@ -51,6 +51,6 @@ ax.stock_img()
 # Plot the world map and the points on the same axis
 #fig, ax = plt.subplots()
 world.plot(ax=ax, color='white', edgecolor='black')
-gdf.plot(ax=ax, marker='.', color='purple', markersize=1)
+gdf.plot(ax=ax, marker='o', color='purple', markersize=0.2)
 plt.show()
 

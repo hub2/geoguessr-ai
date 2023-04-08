@@ -52,7 +52,7 @@ class ImageDataset(Dataset):
         self.transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            RandomPanoramaShift()
+            #RandomPanoramaShift()
         ])
 
     def load_data(self):
@@ -176,6 +176,24 @@ def validate(model, dataloader, classes_, device):
     model.train()
     return total_loss / num_samples
 
+def get_model():
+    model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V2)
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    for param in list(model.parameters())[:84]:
+        param.requires_grad = False
+
+    # Modify the first layer to accommodate the larger input
+    model.conv1 = nn.Conv2d(3, 64, kernel_size=(15, 15), stride=(4, 4), padding=(6, 6), bias=False)
+
+    num_classes = len(classes)
+    # Replace the last layer with a fully connected layer for our number of classes
+    model.fc = nn.Linear(model.fc.in_features, num_classes)
+
+    model = model.to(device)
+    return model
+
 def main():
     wandb.init(project='geoguessr-ai', entity='desik')
 
@@ -191,19 +209,8 @@ def main():
     val_dataloader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=True, pin_memory=True, num_workers=4)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    num_classes = len(classes)
 
-    model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V2)
-
-    for param in list(model.parameters())[:84]:
-        param.requires_grad = False
-
-    # Modify the first layer to accommodate the larger input
-    model.conv1 = nn.Conv2d(3, 64, kernel_size=(15, 15), stride=(4, 4), padding=(6, 6), bias=False)
-
-    # Replace the last layer with a fully connected layer for our number of classes
-    model.fc = nn.Linear(model.fc.in_features, num_classes)
-    #summary(model, (3, 1664, 832))
+    model = get_model()
 
     if torch.cuda.device_count() > 1:
         print("Let's use", torch.cuda.device_count(), "GPUs!")
@@ -211,7 +218,6 @@ def main():
         model = nn.DataParallel(model)
 
 
-    model = model.to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
     #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
