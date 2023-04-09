@@ -194,8 +194,14 @@ def get_model():
     model = model.to(device)
     return model
 
-def main():
-    wandb.init(project='geoguessr-ai', entity='desik')
+def main(resume_checkpoint=None, wandb_id=None):
+    if resume_checkpoint:
+        checkpoint = torch.load(resume_checkpoint)
+        wandb.init(project='geoguessr-ai', entity='desik', id=wandb_id, resume='allow')
+        start_epoch = checkpoint['epoch'] + 1
+    else:
+        wandb.init(project='geoguessr-ai', entity='desik')
+        start_epoch = 0
 
     config = wandb.config
     config.learning_rate = 0.001
@@ -205,12 +211,11 @@ def main():
     train_dataset = ImageDataset(split="train")
     val_dataset = ImageDataset(split="val")
 
-    train_dataloader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True, pin_memory=True, num_workers=4)
-    val_dataloader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=True, pin_memory=True, num_workers=4)
+    train_dataloader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True, pin_memory=True, num_workers=6)
+    val_dataloader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=True, pin_memory=True, num_workers=6)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    model = get_model()
 
     if torch.cuda.device_count() > 1:
         print("Let's use", torch.cuda.device_count(), "GPUs!")
@@ -218,23 +223,22 @@ def main():
         model = nn.DataParallel(model)
 
 
-
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate)
     #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, factor=0.5)
     scaler = torch.cuda.amp.GradScaler()
 
-    if len(sys.argv) > 1:
-        filename = sys.argv[1]
-        model.load_state_dict(torch.load(filename))
-        #optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        #scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
-        for i in range(7):
-            scheduler.step()
+    model = get_model()
+    if resume_checkpoint:
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
 
     min_val_loss = math.inf
 
-    for epoch in range(config.epochs):
+    for epoch in range(start_epoch, config.epochs):
+        wandb.log({"learning_rate", optimizer.get_last_lr()})
+
         train_loss = train(model, train_dataloader, optimizer, classes, scaler, device)
         val_loss = validate(model, val_dataloader, classes, device)
 
@@ -256,4 +260,12 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    if len(sys.argv) > 1:
+        if len(sys.argv) < 3:
+            print("Usage: main.py checkpoint_path wandb_id")
+            exit(0)
+        checkpoint_path = sys.argv[1]
+        wandb_id = sys.argv[2]
+        main(checkpoint_path, wandb_id)
+    else:
+        main()
