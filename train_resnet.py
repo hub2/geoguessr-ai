@@ -198,8 +198,8 @@ def main():
     wandb.init(project='geoguessr-ai', entity='desik')
 
     config = wandb.config
-    config.learning_rate = 0.01
-    config.batch_size = 16
+    config.learning_rate = 0.001
+    config.batch_size = 48
     config.epochs = 1000
 
     train_dataset = ImageDataset(split="train")
@@ -219,7 +219,7 @@ def main():
 
 
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=config.learning_rate)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate)
     #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, factor=0.5)
     scaler = torch.cuda.amp.GradScaler()
