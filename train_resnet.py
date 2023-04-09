@@ -52,7 +52,7 @@ class ImageDataset(Dataset):
         self.transform = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            #RandomPanoramaShift()
+            RandomPanoramaShift()
         ])
 
     def load_data(self):
@@ -82,7 +82,7 @@ class ImageDataset(Dataset):
             combined = combined[:split_index]
         image_files, targets = zip(*combined)
 
-        print(f"{self.split} Data loaded")
+        print(f"{self.split} Data loaded, {len(image_files)} images")
 
         return image_files, targets
 
@@ -119,8 +119,7 @@ def custom_loss(outputs, targets, classes_, alpha=0.003):
     haversine_part = alpha * haversine_loss
     cross_entropy_part = (1 - alpha) * class_loss
 
-    wandb.log({"haversine_loss": haversine_part})
-    wandb.log({"cross_entropy_loss": cross_entropy_part})
+    wandb.log({"haversine_loss": haversine_part, "cross_entropy_loss": cross_entropy_part})
 
     loss = haversine_part + cross_entropy_part
     return loss
@@ -194,19 +193,25 @@ def get_model():
     model = model.to(device)
     return model
 
+def get_lr(optimizer):
+    for param_group in optimizer.param_groups:
+        return param_group['lr']
+
 def main(resume_checkpoint=None, wandb_id=None):
     if resume_checkpoint:
         checkpoint = torch.load(resume_checkpoint)
         wandb.init(project='geoguessr-ai', entity='desik', id=wandb_id, resume='allow')
         start_epoch = checkpoint['epoch'] + 1
+        config = wandb.config
     else:
         wandb.init(project='geoguessr-ai', entity='desik')
         start_epoch = 0
 
-    config = wandb.config
-    config.learning_rate = 0.001
-    config.batch_size = 48
-    config.epochs = 1000
+        config = wandb.config
+        config.learning_rate = 0.001
+        config.batch_size = 48
+        config.epochs = 1000
+
 
     train_dataset = ImageDataset(split="train")
     val_dataset = ImageDataset(split="val")
@@ -216,6 +221,10 @@ def main(resume_checkpoint=None, wandb_id=None):
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+    model = get_model()
+
+    if resume_checkpoint:
+        model.load_state_dict(checkpoint['model_state_dict'])
 
     if torch.cuda.device_count() > 1:
         print("Let's use", torch.cuda.device_count(), "GPUs!")
@@ -225,25 +234,25 @@ def main(resume_checkpoint=None, wandb_id=None):
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate)
     #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+
+    if resume_checkpoint:
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, factor=0.5)
     scaler = torch.cuda.amp.GradScaler()
 
-    model = get_model()
     if resume_checkpoint:
-        model.load_state_dict(checkpoint['model_state_dict'])
-        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
 
     min_val_loss = math.inf
 
     for epoch in range(start_epoch, config.epochs):
-        wandb.log({"learning_rate", optimizer.get_last_lr()})
+        wandb.log({"learning_rate": get_lr(optimizer)})
 
         train_loss = train(model, train_dataloader, optimizer, classes, scaler, device)
         val_loss = validate(model, val_dataloader, classes, device)
 
-        wandb.log({"train_loss": train_loss})
-        wandb.log({"val_loss": val_loss})
+        wandb.log({"train_loss": train_loss, "val_loss": val_loss, "epoch": epoch})
 
         print(f"Epoch {epoch + 1}/{config.epochs}, Train Loss: {train_loss:.4f}, Validation Loss: {val_loss:.4f}")
 
