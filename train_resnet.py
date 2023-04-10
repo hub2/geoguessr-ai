@@ -1,4 +1,5 @@
 import os
+import time
 import sys
 import re
 import math
@@ -97,22 +98,28 @@ class ImageDataset(Dataset):
         return image, target
 
 def haversinef(lat1, lon1, lat2, lon2):
+    lat1 = torch.deg2rad(lat1)
+    lon1 = torch.deg2rad(lon1)
+    lat2 = torch.deg2rad(lat2)
+    lon2 = torch.deg2rad(lon2)
+
     dlon = lon2 - lon1
     dlat = lat2 - lat1
 
     a = torch.sin(dlat/2.0)**2 + torch.cos(lat1) * torch.cos(lat2) * torch.sin(dlon/2.0)**2
-
     c = 2 * torch.arcsin(torch.sqrt(a))
-    km = 6367 * c
+
+    km = 6371.0088 * c
     return km
 
 def calculate_geoguessr(outputs, targets, classes_):
     _, pred_indices = torch.max(outputs, 1)
 
-    pred_coords = [classes_[pred.item()][1] for pred in pred_indices]
-    target_coords = [classes_[t.item()][1] for t in targets]
+    pred_coords = torch.tensor([classes_[pred.item()][1] for pred in pred_indices])
+    target_coords = torch.tensor([classes_[t.item()][1] for t in targets])
 
-    haversine_loss = torch.tensor([haversine(target_coords[i], pred_coords[i]) for i in range(targets.size(0))], dtype=torch.float32)
+    haversine_loss = haversinef(pred_coords[:, 0], pred_coords[:, 1], target_coords[:, 0], target_coords[:, 1])
+
     return [int(5000*(math.e**(-x/2000))) for x in haversine_loss.tolist()]
 
 def custom_loss(outputs, targets, classes_, alpha=0.003):
@@ -121,12 +128,8 @@ def custom_loss(outputs, targets, classes_, alpha=0.003):
     _, pred_indices = torch.max(outputs, 1)
     pred_coords = torch.tensor([classes_[pred.item()][1] for pred in pred_indices])
     target_coords = torch.tensor([classes_[t.item()][1] for t in targets])
+
     haversine_loss = haversinef(pred_coords[:, 0], pred_coords[:, 1], target_coords[:, 0], target_coords[:, 1])
-    print(haversine_loss)
-
-    haversine_loss = torch.tensor([haversine(target_coords[i], pred_coords[i]) for i in range(targets.size(0))], dtype=torch.float32)
-    print(haversine_loss)
-
     haversine_loss = torch.mean(haversine_loss)
 
     haversine_part = alpha * haversine_loss
