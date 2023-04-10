@@ -225,7 +225,7 @@ def main(resume_checkpoint=None, wandb_id=None):
 
         config = wandb.config
         config.learning_rate = 0.001
-        config.batch_size = 48
+        config.batch_size = 8
         config.epochs = 1000
 
 

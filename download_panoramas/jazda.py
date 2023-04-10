@@ -6,6 +6,8 @@ import random
 import sys
 import fiona
 
+
+black_list = ["US"]
 def generate_coordinate(land_areas):
     while True:
         lat = random.uniform(-70, 78)
@@ -15,8 +17,8 @@ def generate_coordinate(land_areas):
 
         # Check if point is inside any of the land areas
         is_on_land = False
-        for land_area in land_areas:
-            if land_area.contains(point):
+        for iso, land_area in land_areas:
+            if iso not in black_list and land_area.contains(point):
                 is_on_land = True
                 break
 
@@ -27,7 +29,7 @@ def generate_coordinate(land_areas):
 land_areas = []
 with fiona.open("../TM_WORLD_BORDERS/TM_WORLD_BORDERS-0.3.shp", "r") as shapefile:
     for feature in shapefile:
-        land_areas.append(shape(feature["geometry"]))
+        land_areas.append((feature["properties"]["ISO2"], shape(feature["geometry"])))
 
 
 while True:
@@ -38,9 +40,10 @@ while True:
     if len(panoids) == 0:
         continue
 
-    panoid = panoids[0]['panoid']
-    lat = panoids[0]['lat']
-    lon = panoids[0]['lon']
+    pano = random.choice(panoids)
+    lat = pano['lat']
+    lon = pano['lon']
+    panoid = pano['panoid']
     name = str(lat) + "_" + str(lon) + ".jpg"
 
     panorama = streetview.download_panorama_v3(panoid, zoom=2, disp=False)
