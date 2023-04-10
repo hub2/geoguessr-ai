@@ -67,6 +67,8 @@ def get_classes():
         print("Using existing points.pickle")
         with open('points.pickle', 'rb') as handle:
             b = pickle.load(handle)
+            for i in range(len(b)):
+                b[i] = b[i][0], b[i][1][::-1]
             return b
 
     for filename in os.listdir(path):
