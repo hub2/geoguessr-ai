@@ -105,7 +105,7 @@ def get_classes():
     for index, cell_id in enumerate(cells):
         lat, lon = s2cell.cell_id_to_lat_lon(cell_id.id())
 
-        points.append((lon, lat))
+        points.append([lat, lon])
     return list(enumerate(points))
 
 

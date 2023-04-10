@@ -60,7 +60,7 @@ class ImageDataset(Dataset):
         coords = [tuple(map(float, re.findall(r"[-+]?\d+\.\d+", img_path))) for img_path in image_files]
 
         # Convert class coordinates to radians and create a BallTree
-        class_coords = [class_coord[1][::-1] for class_coord in classes]
+        class_coords = [class_coord[1] for class_coord in classes]
         class_coords_rad = np.radians(class_coords)
         tree = BallTree(class_coords_rad, metric="haversine")
 
@@ -96,23 +96,36 @@ class ImageDataset(Dataset):
         target = self.targets[index]
         return image, target
 
+def haversinef(lat1, lon1, lat2, lon2):
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+
+    a = torch.sin(dlat/2.0)**2 + torch.cos(lat1) * torch.cos(lat2) * torch.sin(dlon/2.0)**2
+
+    c = 2 * torch.arcsin(torch.sqrt(a))
+    km = 6367 * c
+    return km
+
 def calculate_geoguessr(outputs, targets, classes_):
     _, pred_indices = torch.max(outputs, 1)
 
-    pred_coords = [list(classes_[pred.item()][1]) for pred in pred_indices]
-    target_coords = [list(classes_[t.item()][1]) for t in targets]
+    pred_coords = [classes_[pred.item()][1] for pred in pred_indices]
+    target_coords = [classes_[t.item()][1] for t in targets]
 
-    haversine_loss = torch.tensor([haversine(target_coords[i][::-1], pred_coords[i][::-1]) for i in range(targets.size(0))], dtype=torch.float32)
+    haversine_loss = torch.tensor([haversine(target_coords[i], pred_coords[i]) for i in range(targets.size(0))], dtype=torch.float32)
     return [int(5000*(math.e**(-x/2000))) for x in haversine_loss.tolist()]
 
 def custom_loss(outputs, targets, classes_, alpha=0.003):
     class_loss = nn.CrossEntropyLoss()(outputs, targets)
 
     _, pred_indices = torch.max(outputs, 1)
-    pred_coords = [list(classes_[pred.item()][1]) for pred in pred_indices]
-    target_coords = [list(classes_[t.item()][1]) for t in targets]
+    pred_coords = torch.tensor([classes_[pred.item()][1] for pred in pred_indices])
+    target_coords = torch.tensor([classes_[t.item()][1] for t in targets])
+    haversine_loss = haversinef(pred_coords[:, 0], pred_coords[:, 1], target_coords[:, 0], target_coords[:, 1])
+    print(haversine_loss)
 
-    haversine_loss = torch.tensor([haversine(target_coords[i][::-1], pred_coords[i][::-1]) for i in range(targets.size(0))], dtype=torch.float32)
+    haversine_loss = torch.tensor([haversine(target_coords[i], pred_coords[i]) for i in range(targets.size(0))], dtype=torch.float32)
+    print(haversine_loss)
 
     haversine_loss = torch.mean(haversine_loss)
 
@@ -233,12 +246,15 @@ def main(resume_checkpoint=None, wandb_id=None):
 
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=config.learning_rate)
-    #scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
     if resume_checkpoint:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=5, factor=0.5)
+    # For drop only now
+    for g in optimizer.param_groups:
+        g['lr'] = 0.0001
+
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3, factor=0.1)
     scaler = torch.cuda.amp.GradScaler()
 
     if resume_checkpoint:
