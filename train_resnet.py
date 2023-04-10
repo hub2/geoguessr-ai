@@ -123,7 +123,7 @@ def calculate_geoguessr(outputs, targets, classes_):
     return [int(5000*(math.e**(-x/2000))) for x in haversine_loss.tolist()]
 
 def custom_loss(outputs, targets, classes_, alpha=0.003):
-    class_loss = nn.CrossEntropyLoss()(outputs, targets)
+    #class_loss = nn.CrossEntropyLoss()(outputs, targets)
 
     _, pred_indices = torch.max(outputs, 1)
     pred_coords = torch.tensor([classes_[pred.item()][1] for pred in pred_indices])
@@ -132,12 +132,13 @@ def custom_loss(outputs, targets, classes_, alpha=0.003):
     haversine_loss = haversinef(pred_coords[:, 0], pred_coords[:, 1], target_coords[:, 0], target_coords[:, 1])
     haversine_loss = torch.mean(haversine_loss)
 
-    haversine_part = alpha * haversine_loss
-    cross_entropy_part = (1 - alpha) * class_loss
+    #haversine_part = alpha * haversine_loss
+    #cross_entropy_part = (1 - alpha) * class_loss
 
     wandb.log({"haversine_loss": haversine_part, "cross_entropy_loss": cross_entropy_part})
 
-    loss = haversine_part + cross_entropy_part
+    #loss = haversine_part + cross_entropy_part
+    loss = haversine_loss
     return loss
 
 
@@ -160,6 +161,7 @@ def train(model, dataloader, optimizer, classes_, scaler, device):
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
+
         if idx % 1000 == 0:
             geoguessr_loss_train_mean = statistics.mean(calculate_geoguessr(outputs, targets, classes_))
             wandb.log({"geoguessr_score_train_random_batch_mean": geoguessr_loss_train_mean})
@@ -196,8 +198,8 @@ def get_model():
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    for param in list(model.parameters())[:84]:
-        param.requires_grad = False
+    #for param in list(model.parameters())[:84]:
+    #    param.requires_grad = False
 
     # Modify the first layer to accommodate the larger input
     model.conv1 = nn.Conv2d(3, 64, kernel_size=(15, 15), stride=(4, 4), padding=(6, 6), bias=False)
@@ -224,7 +226,7 @@ def main(resume_checkpoint=None, wandb_id=None):
         start_epoch = 0
 
         config = wandb.config
-        config.learning_rate = 0.001
+        config.learning_rate = 0.01
         config.batch_size = 48
         config.epochs = 1000
 
@@ -252,10 +254,6 @@ def main(resume_checkpoint=None, wandb_id=None):
 
     if resume_checkpoint:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-
-    # For drop only now
-    for g in optimizer.param_groups:
-        g['lr'] = 0.0001
 
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3, factor=0.1)
     scaler = torch.cuda.amp.GradScaler()
