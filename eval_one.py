@@ -56,11 +56,11 @@ def eval_one(model, image_path=None, coords=None, panoid=None):
         if idx == cl[0]:
             pred = cl
             break
-    class_, pred_coords = pred[0], pred[1][::-1]
+    class_, pred_coords = pred[0], pred[1]
     if image_path:
         lat, lon = [float(x) for x in os.path.basename(image_path).replace(".jpg", "").split("_")]
     if image_path or coords:
-        x = haversine((lat, lon), pred[1][::-1])
+        x = haversine((lat, lon), pred[1])
         score = int(5000*(math.e**(-x/2000)))
 
         print(f"Geoguessr score {score}")
