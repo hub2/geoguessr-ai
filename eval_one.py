@@ -8,11 +8,10 @@ import os
 import json
 import random
 import math
-from net import MultiLabelNN
 from helpers import to_cuda
 from download_panoramas.get_one_by_coords import get_image_by_coords
-from split_earth_s2 import get_classes
-from train_resnet import get_model
+#from split_earth_s2 import get_classes
+from train_resnet import get_model, classes
 from haversine import haversine
 
 
@@ -21,7 +20,6 @@ from PIL import Image
 import sys
 
 
-classes = get_classes()
 model = get_model()
 
 def eval_one(model_path, image_path=None, coords=None):
