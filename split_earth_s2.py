@@ -39,7 +39,7 @@ def split_until_threshold(init_cell, locations, threshold, minimum_threshold):
                 return split_until_threshold(child, locations_in_child, threshold, minimum_threshold)
 
         return [init_cell]
-    if len(locations) <= threshold:
+    if len(locations) <= threshold or init_cell.level() > 7:
         return [init_cell]
     cells = []
     for i in range(4):
@@ -58,7 +58,7 @@ def split_earth_cells():
     for face in range(6):
         locations_on_face = locations_all[face]
         face_cell = pys2.S2CellId.FromFacePosLevel(face, 0, 0)
-        cell_ids += split_until_threshold(face_cell, locations_on_face, 50, 5)
+        cell_ids += split_until_threshold(face_cell, locations_on_face, 105, 10)
 
     return cell_ids
 
@@ -67,16 +67,23 @@ def get_classes():
         print("Using existing points.pickle")
         with open('points.pickle', 'rb') as handle:
             b = pickle.load(handle)
-            for i in range(len(b)):
-                b[i] = b[i][0], b[i][1][::-1]
             return b
 
-    for filename in os.listdir(path):
+    if os.path.isfile("images.txt"):
+        print("images.txt exists, using that...")
+        with open("images.txt", "r") as f:
+            lines = f.readlines()
+    else:
+        lines = os.listdir(path)
+
+
+    for filename in lines:
+        filename = filename.strip()
         # Check if the file is a JPG image
         if filename.endswith(".jpg"):
             # Extract the latitude and longitude from the filename
             out = filename.split(".jpg")[0]
-            lon, lat = out.split("_")
+            lat, lon = out.split("_")
             lat = float(lat)
             lon = float(lon)
             coords.append((lat, lon))
@@ -90,7 +97,7 @@ def get_classes():
             max_lon = coord[1]
 
     for lat, lon in coords:
-        cell = s2cell.lat_lon_to_cell_id(lon, lat)
+        cell = s2cell.lat_lon_to_cell_id(lat, lon)
         cell = pys2.S2CellId(cell)
         #point = pys2.S2LatLng.FromDegrees(lat, lon)
         #cell = pys2.S2CellId(point)
@@ -106,8 +113,10 @@ def get_classes():
     points = []
     for index, cell_id in enumerate(cells):
         lat, lon = s2cell.cell_id_to_lat_lon(cell_id.id())
+        assert lat <= 90
+        assert lat >= -90
 
-        points.append([lat, lon])
+        points.append([lon, lat])
     return list(enumerate(points))
 
 
