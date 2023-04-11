@@ -15,8 +15,16 @@ regex = r"([-]?\d+\.\d+)_([-]?\d+\.\d+)\.jpg$"
 # Create an empty list to store the coordinates
 coords = []
 
+lines = []
+if os.path.isfile("images.txt"):
+    print("images.txt exists, using that...")
+    with open("images.txt", "r") as f:
+        lines = f.readlines()
+lines += os.listdir(path)
+
 # Loop over the files in the "downloads" folder
-for filename in os.listdir(path):
+for filename in lines:
+    filename = filename.strip()
     # Check if the file is a JPG image
     if filename.endswith(".jpg"):
         # Extract the latitude and longitude from the filename

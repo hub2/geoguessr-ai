@@ -37,7 +37,10 @@ def _panoids_data(lat, lon, proxies=None):
     closest panoramas (ids) to a give GPS coordinate.
     """
     url = _panoids_url(lat, lon)
-    return requests.get(url, proxies=None)
+    r= requests.get(url, proxies=None)
+    if r.status_code != 200:
+        print("ups")
+    return r
 
 
 def panoids(lat, lon, closest=False, disp=False, proxies=None):

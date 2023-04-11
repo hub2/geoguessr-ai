@@ -26,7 +26,22 @@ locations_all = {}
 def split_until_threshold(init_cell, locations, threshold, minimum_threshold):
     if len(locations) == 0:
         return []
-    if len(locations) <= minimum_threshold and not init_cell.is_leaf():
+    if init_cell.is_leaf():
+        return [init_cell]
+    #if len(locations) <= minimum_threshold and not init_cell.is_leaf():
+    #    cells = []
+    #    for i in range(4):
+    #        child = init_cell.child(i)
+    #        locations_in_child = []
+    #        for location in locations:
+    #            if child.contains(location):
+    #                locations_in_child.append(location)
+
+    #        if len(locations) == len(locations_in_child):
+    #            return split_until_threshold(child, locations_in_child, threshold, minimum_threshold)
+
+    #    return [init_cell]
+    if len(locations) <= threshold or init_cell.level() > 6:
         cells = []
         for i in range(4):
             child = init_cell.child(i)
@@ -38,8 +53,6 @@ def split_until_threshold(init_cell, locations, threshold, minimum_threshold):
             if len(locations) == len(locations_in_child):
                 return split_until_threshold(child, locations_in_child, threshold, minimum_threshold)
 
-        return [init_cell]
-    if len(locations) <= threshold or init_cell.level() > 7:
         return [init_cell]
     cells = []
     for i in range(4):
@@ -58,7 +71,7 @@ def split_earth_cells():
     for face in range(6):
         locations_on_face = locations_all[face]
         face_cell = pys2.S2CellId.FromFacePosLevel(face, 0, 0)
-        cell_ids += split_until_threshold(face_cell, locations_on_face, 105, 10)
+        cell_ids += split_until_threshold(face_cell, locations_on_face, 92, 10)
 
     return cell_ids
 
@@ -68,13 +81,12 @@ def get_classes():
         with open('points.pickle', 'rb') as handle:
             b = pickle.load(handle)
             return b
-
+    lines = []
     if os.path.isfile("images.txt"):
         print("images.txt exists, using that...")
         with open("images.txt", "r") as f:
             lines = f.readlines()
-    else:
-        lines = os.listdir(path)
+    lines += os.listdir(path)
 
 
     for filename in lines:

@@ -25,3 +25,6 @@ def get_image_by_coords(lat, lon):
     panorama = streetview.download_panorama_v3(panoid, zoom=2, disp=False)
     return panorama
 
+if __name__ == '__main__':
+    out = get_image_by_coords(sys.argv[1], sys.argv[2])
+    out.show()
