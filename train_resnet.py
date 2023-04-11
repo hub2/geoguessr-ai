@@ -225,7 +225,7 @@ def main(resume_checkpoint=None, wandb_id=None):
         start_epoch = 0
 
         config = wandb.config
-        config.learning_rate = 0.001
+        config.learning_rate = 0.01
         config.batch_size = 8
         config.epochs = 1000
 
@@ -254,7 +254,7 @@ def main(resume_checkpoint=None, wandb_id=None):
     if resume_checkpoint:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3, factor=0.1)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=4, factor=0.1)
     scaler = torch.cuda.amp.GradScaler()
 
     if resume_checkpoint:
