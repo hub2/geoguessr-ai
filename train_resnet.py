@@ -123,7 +123,7 @@ def calculate_geoguessr(outputs, targets, classes_):
     return [int(5000*(math.e**(-x/2000))) for x in haversine_loss.tolist()]
 
 def custom_loss(outputs, targets, classes_, alpha=0.005):
-    #class_loss = nn.CrossEntropyLoss()(outputs, targets)
+    class_loss = nn.CrossEntropyLoss()(outputs, targets)
 
     _, pred_indices = torch.max(outputs, 1)
     pred_coords = torch.tensor([classes_[pred.item()][1] for pred in pred_indices])
@@ -132,13 +132,12 @@ def custom_loss(outputs, targets, classes_, alpha=0.005):
     haversine_loss = haversinef(pred_coords[:, 0], pred_coords[:, 1], target_coords[:, 0], target_coords[:, 1])
     haversine_loss = torch.mean(haversine_loss)
 
-    #haversine_part = alpha * haversine_loss
-    #cross_entropy_part = (1 - alpha) * class_loss
+    haversine_part = alpha * haversine_loss
+    cross_entropy_part = (1 - alpha) * class_loss
 
     wandb.log({"haversine_loss": haversine_part, "cross_entropy_loss": cross_entropy_part})
 
-    #loss = haversine_part + cross_entropy_part
-    loss = haversine_loss
+    loss = haversine_part + cross_entropy_part
     return loss
 
 
