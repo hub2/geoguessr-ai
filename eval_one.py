@@ -57,15 +57,20 @@ def eval_one(model, image_path=None, coords=None, panoid=None):
             pred = cl
             break
     class_, pred_coords = pred[0], pred[1]
+    print(f"class: {class_}")
+    pred_lat, pred_lon = pred[1]
+    pred_lat = pred_lat%90
+    pred_coords = (pred_lat, pred_lon)
+    print(f"{pred_coords}")
     if image_path:
         lat, lon = [float(x) for x in os.path.basename(image_path).replace(".jpg", "").split("_")]
     if image_path or coords:
-        x = haversine((lat, lon), pred[1])
+        x = haversine((lat, lon), pred_coords)
         score = int(5000*(math.e**(-x/2000)))
 
         print(f"Geoguessr score {score}")
 
-    return pred_coords
+    return class_, pred_coords
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:

@@ -23,6 +23,7 @@ from haversine import haversine
 
 
 classes = get_classes()
+cross_entropy_loss = nn.CrossEntropyLoss()
 
 class RandomPanoramaShift:
     def __init__(self):
@@ -98,6 +99,12 @@ class ImageDataset(Dataset):
         return image, target
 
 def haversinef(lat1, lon1, lat2, lon2):
+    assert(lat1<= 90.0 and lat1 >= -90)
+    assert(lat2<= 90.0 and lat2 >= -90)
+
+    assert(lon1<= 180.0 and lon1 >= -180)
+    assert(lon2<= 180.0 and lon2 >= -180)
+
     lat1 = torch.deg2rad(lat1)
     lon1 = torch.deg2rad(lon1)
     lat2 = torch.deg2rad(lat2)
@@ -123,7 +130,7 @@ def calculate_geoguessr(outputs, targets, classes_):
     return [int(5000*(math.e**(-x/2000))) for x in haversine_loss.tolist()]
 
 def custom_loss(outputs, targets, classes_, alpha=0.005):
-    class_loss = nn.CrossEntropyLoss()(outputs, targets)
+    class_loss = cross_entropy_loss(outputs, targets)
 
     _, pred_indices = torch.max(outputs, 1)
     pred_coords = torch.tensor([classes_[pred.item()][1] for pred in pred_indices])
@@ -226,7 +233,7 @@ def main(resume_checkpoint=None, wandb_id=None):
 
         config = wandb.config
         config.learning_rate = 0.01
-        config.batch_size = 8
+        config.batch_size = 48
         config.epochs = 1000
 
 
@@ -254,7 +261,7 @@ def main(resume_checkpoint=None, wandb_id=None):
     if resume_checkpoint:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=4, factor=0.1)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=2, factor=0.1)
     scaler = torch.cuda.amp.GradScaler()
 
     if resume_checkpoint:
