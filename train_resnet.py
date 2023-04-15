@@ -99,11 +99,8 @@ class ImageDataset(Dataset):
         return image, target
 
 def haversinef(lat1, lon1, lat2, lon2):
-    assert(lat1<= 90.0 and lat1 >= -90)
-    assert(lat2<= 90.0 and lat2 >= -90)
-
-    assert(lon1<= 180.0 and lon1 >= -180)
-    assert(lon2<= 180.0 and lon2 >= -180)
+    assert -90 <= lat1[0].item() <= 90
+    assert -90 <= lat2[0].item() <= 90
 
     lat1 = torch.deg2rad(lat1)
     lon1 = torch.deg2rad(lon1)
@@ -261,7 +258,7 @@ def main(resume_checkpoint=None, wandb_id=None):
     if resume_checkpoint:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=2, factor=0.1)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
     scaler = torch.cuda.amp.GradScaler()
 
     if resume_checkpoint:
