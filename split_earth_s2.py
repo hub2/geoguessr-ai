@@ -130,7 +130,7 @@ def get_classes():
         assert lat <= 90
         assert lat >= -90
 
-        points.append([lon, lat])
+        points.append([lat, lon])
     return list(enumerate(points))
 
 
@@ -140,7 +140,7 @@ def main():
     with open('points.pickle', 'wb') as handle:
         pickle.dump(points, handle, protocol=4)
 
-    points = [Point(i[1][0], i[1][1]) for i in points]
+    points = [Point(i[1][1], i[1][0]) for i in points]
     gdf = gpd.GeoDataFrame(geometry=points)
 
     world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
