@@ -258,7 +258,7 @@ def main(resume_checkpoint=None, wandb_id=None):
     if resume_checkpoint:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
 
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=5, gamma=0.1)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3, factor=0.1)
     scaler = torch.cuda.amp.GradScaler()
 
     if resume_checkpoint:
