@@ -10,7 +10,7 @@ import cartopy.crs as ccrs
 path = "./downloads"
 
 # Define a regular expression to match the latitude and longitude in the filename
-regex = r"([-]?\d+\.\d+)_([-]?\d+\.\d+)\.jpg$"
+regex = r"([-]?\d+\.\d+)_([-]?\d+\.\d+)_\d+\.jpg$"
 
 # Create an empty list to store the coordinates
 coords = []
@@ -19,7 +19,8 @@ lines = []
 if os.path.isfile("images.txt"):
     print("images.txt exists, using that...")
     with open("images.txt", "r") as f:
-        lines = f.readlines()
+        #lines = f.readlines()
+        pass
 lines += os.listdir(path)
 
 # Loop over the files in the "downloads" folder
@@ -33,12 +34,12 @@ for filename in lines:
             lon = float(match.group(1))
             lat = float(match.group(2))
             coords.append((lat, lon))
-
+print(len(coords))
 
 with open("out.csv", "w") as f:
     f.write("latitude,longitude\n")
     for coord in coords:
-        f.write(str(coord[1]) + "," + str(coord[0]) + "\n")
+        f.write(str(coord[0]) + "," + str(coord[1]) + "\n")
 
 
 

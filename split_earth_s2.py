@@ -97,7 +97,7 @@ def get_classes():
         if filename.endswith(".jpg"):
             # Extract the latitude and longitude from the filename
             out = filename.split(".jpg")[0]
-            lat, lon = out.split("_")
+            lat, lon  = out.split("_")[:2]
             lat = float(lat)
             lon = float(lon)
             coords.append((lat, lon))

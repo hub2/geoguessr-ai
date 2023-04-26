@@ -37,7 +37,7 @@ def _panoids_data(lat, lon, proxies=None):
     closest panoramas (ids) to a give GPS coordinate.
     """
     url = _panoids_url(lat, lon)
-    r= requests.get(url, proxies=None)
+    r= requests.get(url, proxies=proxies)
     if r.status_code != 200:
         print("ups")
     return r
@@ -50,7 +50,7 @@ def panoids(lat, lon, closest=False, disp=False, proxies=None):
     will be gotten (at all the available dates)
     """
 
-    resp = _panoids_data(lat, lon)
+    resp = _panoids_data(lat, lon, proxies)
 
     # Get all the panorama ids and coordinates
     # I think the latest panorama should be the first one. And the previous
