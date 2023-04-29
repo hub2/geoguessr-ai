@@ -11,7 +11,7 @@ from eval_one import eval_one, load_model, eval_multi
 app = Flask(__name__)
 CORS(app)
 
-model = load_model("2023-04-17-geoguessr-20.pth")
+model = load_model("2023-04-29-geoguessr-15.pth")
 @app.route("/eval", methods=["GET", "POST"])
 @cross_origin()
 def upload_file():

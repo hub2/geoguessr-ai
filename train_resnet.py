@@ -51,11 +51,15 @@ class ImageDataset(Dataset):
         self.val_split = val_split
         self.seed = seed
         self.images, self.targets = self.load_data()
-        self.transform = transforms.Compose([
+        self.transform_val = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            RandomPanoramaShift(),
-            transforms.TrivialAugmentWide()
+        ])
+        self.transform_train = transforms.Compose([
+            transforms.TrivialAugmentWide(),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+            RandomPanoramaShift()
         ])
 
     def load_data(self):
@@ -95,7 +99,10 @@ class ImageDataset(Dataset):
     def __getitem__(self, index):
         image_path = self.images[index]
         image = Image.open(image_path)
-        image = self.transform(image.convert('RGB'))
+        if self.split == "train":
+            image = self.transform_train(image.convert('RGB'))
+        else:
+            image = self.transform_val(image.convert('RGB'))
         target = self.targets[index]
         return image, target
 

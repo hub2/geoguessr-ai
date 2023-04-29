@@ -19,7 +19,7 @@ lines = []
 if os.path.isfile("images.txt"):
     print("images.txt exists, using that...")
     with open("images.txt", "r") as f:
-        lines = f.readlines()
+        #lines = f.readlines()
         pass
 lines += os.listdir(path)
 

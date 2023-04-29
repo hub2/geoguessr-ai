@@ -17,7 +17,9 @@ ccs = [
     [-168.2,-56.3,179.5,76.4], # world
     #[166.57,-47.33,178.81,-33.94], # NZ
     #[125.9329,34.1788,129.6683,38.6158], # south korea
-    #[-18.6,-35.1,51.0,36.2], # Africa
+    [-18.6,-35.1,51.0,36.2], # Africa
+    [-18.6,-35.1,51.0,36.2], # Africa
+    [-18.6,-35.1,51.0,36.2], # Africa
     #[-80.7,-54.3,-35.0,12.5], # South America
     #[94.6,-44.4,154.8,20.9], #Asia + Australia
 ]
@@ -68,7 +70,7 @@ def generate_coordinate(land_areas):
                 panoids = streetview.panoids(lat=lat, lon=lon)
                 #panoids = [random.choice(panoids)]
                 random.shuffle(panoids)
-                panoids = panoids[:4]
+                panoids = panoids[:2]
             except Exception:
                 continue
             if len(panoids) != 0:
@@ -108,7 +110,7 @@ def downloader():
             except Exception:
                 continue
             #print("\nsaving... " + name)
-            panorama.save(os.path.join("downloads", name))
+            panorama.save(os.path.join("/media/des/Data2tb/geoguessr/", name))
 
 
 downloaders = []
