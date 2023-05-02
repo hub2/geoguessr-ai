@@ -56,15 +56,15 @@ class ImageDataset(Dataset):
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ])
         self.transform_train = transforms.Compose([
-            transforms.TrivialAugmentWide(),
+            #transforms.TrivialAugmentWide(),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            RandomPanoramaShift()
+            #RandomPanoramaShift()
         ])
 
     def load_data(self):
-        image_files = glob.glob("./download_panoramas/downloads/*.jpg")
-        coords = [tuple(map(float, re.findall(r"[-+]?\d+\.\d+", img_path))) for img_path in image_files]
+        image_files = glob.glob("/media/des/Data2tb/geoguessr/*.jpg")
+        coords = [tuple(map(float, re.findall(r"[-+]?\d+\.\d+", os.path.basename(img_path)))) for img_path in image_files]
 
         # Convert class coordinates to radians and create a BallTree
         class_coords = [class_coord[1] for class_coord in classes]
@@ -152,7 +152,6 @@ def custom_loss(outputs, targets, classes_, alpha=0.005):
     loss = haversine_part + cross_entropy_part
     return loss
 
-
 def train(model, dataloader, optimizer, classes_, scaler, device):
     model.train()
     total_loss = 0
@@ -238,15 +237,15 @@ def main(resume_checkpoint=None, wandb_id=None):
 
         config = wandb.config
         config.learning_rate = 0.01
-        config.batch_size = 48
+        config.batch_size = 54
         config.epochs = 1000
 
 
     train_dataset = ImageDataset(split="train")
     val_dataset = ImageDataset(split="val")
 
-    train_dataloader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True, pin_memory=True, num_workers=6)
-    val_dataloader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=True, pin_memory=True, num_workers=6)
+    train_dataloader = DataLoader(train_dataset, batch_size=config.batch_size, shuffle=True, pin_memory=True, num_workers=5)
+    val_dataloader = DataLoader(val_dataset, batch_size=config.batch_size, shuffle=True, pin_memory=True, num_workers=5)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -265,6 +264,9 @@ def main(resume_checkpoint=None, wandb_id=None):
 
     if resume_checkpoint:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+
+    for g in optimizer.param_groups:
+        g['lr'] = 0.0001
 
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min', patience=3, factor=0.1)
     scaler = torch.cuda.amp.GradScaler()

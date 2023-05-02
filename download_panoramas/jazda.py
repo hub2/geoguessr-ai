@@ -7,7 +7,7 @@ import random
 import sys
 import fiona
 import csv
-
+import time
 
 ccs = [
     #[54.2245,24.1393,56.1691,26.1185], # ?
@@ -17,9 +17,6 @@ ccs = [
     [-168.2,-56.3,179.5,76.4], # world
     #[166.57,-47.33,178.81,-33.94], # NZ
     #[125.9329,34.1788,129.6683,38.6158], # south korea
-    [-18.6,-35.1,51.0,36.2], # Africa
-    [-18.6,-35.1,51.0,36.2], # Africa
-    [-18.6,-35.1,51.0,36.2], # Africa
     #[-80.7,-54.3,-35.0,12.5], # South America
     #[94.6,-44.4,154.8,20.9], #Asia + Australia
 ]
@@ -67,6 +64,12 @@ def generate_coordinate(land_areas):
 
         if is_on_land:
             try:
+                #r = random.choice([0,1,2])
+                #if r  == 0:
+                #    panoids = streetview.panoids(lat=lat, lon=lon, proxies={"http": "http://niewiado.me:8443", "https": "http://niewiado.me:8443"})
+                #elif r == 1:
+                #    panoids = streetview.panoids(lat=lat, lon=lon, proxies={"http": "http://164.92.241.114:8443", "https": "http://164.92.241.114:8443"})
+                #else:
                 panoids = streetview.panoids(lat=lat, lon=lon)
                 #panoids = [random.choice(panoids)]
                 random.shuffle(panoids)

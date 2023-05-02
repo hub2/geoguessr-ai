@@ -22,6 +22,10 @@ import os
 import numpy as np
 from skimage import io
 
+headers = {
+    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36',
+}
+
 def _panoids_url(lat, lon):
     """
     Builds the URL of the script on Google's servers that returns the closest
